@@ -21,8 +21,8 @@ timeStamp | Date | &ge;0 | No | No | **Auto-filled**.
 jobTitle | String | &le;100 | No | Yes | Job title.
 companyDetails.name | String | 1-100 | No | Yes | Company/Employer name.
 companyDetails.imageUrl | String | 0-200 | No | No | Company/Employer image.
-jobRequirments | String | 0-1000 | No | Yes | Requirments
-noOfYearOfExperiences | Integer | 0-10 | 0 | No | Year(s) of experiences
+jobRequirements | String | 0-1000 | No | Yes | Requirements
+noOfYearsOfExperiences | Integer | 0-10 | 0 | No | Year(s) of experiences
 jobFunctions | [JobFunction] | &ge;0 | No | No | Job functions.
 
 ### JobFunction

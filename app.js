@@ -7,6 +7,8 @@ const koaBody = require('koa-body');
 
 const app = new Koa();
 
+const PORT = process.env.PORT || 5000
+
 app.use(cors({
   origin: '*'
 }));
@@ -138,10 +140,17 @@ async function updateJob(ctx) {
   const jobReferenceNo = body.jobReferenceNo;
   const jobTitle = body.jobTitle;
 
-  Job.findOneAndUpdate({ jobReferenceNo }, { jobTitle }, function (err, job) {
-    if (err) return console.error(err);
+  const p = function() {
+    return new Promise(resolve => {
+      Job.findOneAndUpdate({ jobReferenceNo }, { jobTitle }, { new: true }, function (err, job) {
+      if (err) return console.error(err);
 
-  });
+        resolve(JSON.stringify(job));
+      });
+    })
+  }
+
+  ctx.body = await p();
 }
 
 async function deleteJobByReferenceNo(ctx) {
@@ -149,7 +158,7 @@ async function deleteJobByReferenceNo(ctx) {
 
   Job.deleteOne({ jobReferenceNo }, function (err) {
     if (err) return console.error(err);
-    
+
   });
 }
 
@@ -163,4 +172,4 @@ app
   .use(router.routes())
   .use(router.allowedMethods());
 
-app.listen(3001);
+app.listen(PORT);
