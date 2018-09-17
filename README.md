@@ -1,6 +1,7 @@
 # Starberry Backend Development Assessment
 
 [![Build Status](https://travis-ci.com/whs-dot-hk/starberry-backend-development-assessment.svg?branch=master)](https://travis-ci.com/whs-dot-hk/starberry-backend-development-assessment)
+[![Heroku](https://heroku-badge.herokuapp.com/?app=sbda-api&root=api/job&style=flat)](https://sbda-api.herokuapp.com/api/job)
 
 ## Features
 
