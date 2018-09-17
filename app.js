@@ -32,7 +32,7 @@ const Joi = require('joi');
 
 async function findJobs(ctx) {
   const p = function() {
-    return new Promise(resolve => Job.find().populate('jobFunctions').exec(function (err, jobs) {
+    return new Promise(resolve => Job.find().sort({ timeStamp: -1 }).populate('jobFunctions').exec(function (err, jobs) {
       if(err) return console.error(err);
   
       resolve(JSON.stringify(jobs));
@@ -46,15 +46,20 @@ async function saveJob(ctx) {
   const body = ctx.request.body;
 
   const schema = Joi.object().keys({
+    noOfVancancies: Joi.number().min(1).max(10).required(),
     jobTitle: Joi.string().max(100).required(),
+    companyDetailsName: Joi.string().max(100).allow(''),
+    companyDetailsImageUrl: Joi.string().max(200).allow(''),
+    jobRequirements: Joi.string().max(200).allow(''),
+    noOfYearsOfExperiences: Joi.number().min(0).max(10),
     jobFunctions: Joi.array().items(Joi.object().keys({
       name: Joi.string().max(100).required()
     }))
   });
   
   const result = Joi.validate(body, schema);
-  
-  if (result.error !== null) return;
+
+  if (result.error !== null) return console.error(result);
 
   const p = function() {
     return new Promise(resolve => NextJobReferenceNoHelper.getNextJobReferenceNo(function (r) {
@@ -67,46 +72,60 @@ async function saveJob(ctx) {
   const inputJfs = body.jobFunctions;
 
   const job = new Job({
+    noOfVancancies: body.noOfVancancies,
+    jobReferenceNo: n,
+    timeStamp: Date.now(),
     jobTitle: body.jobTitle,
-    jobReferenceNo: n
+    companyDetailsName: body.companyDetailsName,
+    companyDetailsImageUrl: body.companyDetailsImageUrl,
+    jobRequirements: body.jobRequirements,
+    noOfYearsOfExperiences: body.noOfYearsOfExperiences
   });
 
-  job.save(function (err) {
-    if (err) return console.error(err);
-
-    let ids = [];
-
-    inputJfs.forEach(inputJf => {
-      JobFunction.findOne({ name: inputJf.name }, function (err, jf) {
-        if (err) return console.error(err);
+  const p2 = function() {
+    return new Promise(resolve => job.save(function (err, doc) {
+      if (err) return console.error(err);
   
-        if (jf === null) {
-          const jf = new JobFunction({
-            name: inputJf.name
-          });
+      let ids = [];
   
-          jf.save(function (err) {
-            if (err) return console.error(err);
-            
+      inputJfs.forEach(inputJf => {
+        JobFunction.findOne({ name: inputJf.name }, function (err, jf) {
+          if (err) return console.error(err);
+    
+          if (jf === null) {
+            const jf = new JobFunction({
+              name: inputJf.name
+            });
+
+            jf.save(function (err) {
+              if (err) return console.error(err);
+              
+              ids.push(jf._id);
+  
+              Job.findByIdAndUpdate(job._id, { jobFunctions: ids }, function (err, doc) {
+                if (err) return console.error(err);
+    
+                resolve(JSON.stringify(doc));
+              });
+            })
+          }
+          else {
             ids.push(jf._id);
-
+  
             Job.findByIdAndUpdate(job._id, { jobFunctions: ids }, function (err, doc) {
               if (err) return console.error(err);
-  
+    
+              resolve(JSON.stringify(doc));
             });
-          })
-        }
-        else {
-          ids.push(jf._id);
-
-          Job.findByIdAndUpdate(job._id, { jobFunctions: ids }, function (err, doc) {
-            if (err) return console.error(err);
-  
-          });
-        }
+          }
+        });
       });
-    });
-  });
+
+      resolve(doc);
+    }));
+  }
+
+  ctx.body = await p2();
 }
 
 async function findJobByJobReferenceNo(ctx) {
